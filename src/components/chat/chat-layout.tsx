@@ -43,7 +43,7 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
   };
 
   const fetchUserChatList = useCallback(async () => {
-    if (!loggedInUser) return;
+    if (!loggedInUser?.id) return;
     try {
       const userDocRef = doc(db, "users", loggedInUser.id);
       
@@ -54,33 +54,34 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
           
           if (chatUserIds.length > 0) {
             const usersQuery = query(collection(db, 'users'), where(documentId(), 'in', chatUserIds));
+            const usersSnapshot = await getDocs(usersQuery);
+            const chatUsers = usersSnapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data(),
+              online: doc.data().online || false,
+            })) as User[];
             
-            // Separate onSnapshot for the list of users
-            const unsubscribeUsers = onSnapshot(usersQuery, (usersSnapshot) => {
-              const chatUsers = usersSnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data(),
-                online: doc.data().online || false,
-              })) as User[];
-              
-              setUsers(chatUsers);
+            setUsers(chatUsers);
 
-              if (chatUsers.length > 0) {
-                 if (!selectedUser || !chatUsers.find(u => u.id === selectedUser.id)) {
-                  setSelectedUser(chatUsers.find(u => u.id !== loggedInUser.id) || chatUsers[0]);
-                }
-              } else {
-                setSelectedUser(null);
-              }
-            });
-            // Return this new unsubscribe function
-            return unsubscribeUsers;
-
-          } else {
-              setUsers([]);
+            if (chatUsers.length > 0 && (!selectedUser || !chatUsers.some(u => u.id === selectedUser.id))) {
+              setSelectedUser(chatUsers[0]);
+            } else if (chatUsers.length === 0) {
               setSelectedUser(null);
+            }
+          } else {
+            setUsers([]);
+            setSelectedUser(null);
           }
+        } else {
+          console.log("Logged-in user document does not exist.");
         }
+      }, (error) => {
+          console.error("Error in user snapshot listener:", error);
+          toast({
+            variant: "destructive",
+            title: "Permissions Error",
+            description: "Could not fetch your user data. Please check Firestore rules.",
+          });
       });
       return unsubscribe;
 
@@ -92,16 +93,14 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
         description: "Could not fetch your chat list.",
       });
     }
+    return () => {};
   }, [loggedInUser, toast, selectedUser]);
   
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
     
-    const setupListener = async () => {
-      unsubscribe = await fetchUserChatList();
-    }
     if (loggedInUser?.id) {
-        setupListener();
+        fetchUserChatList().then(unsub => unsubscribe = unsub);
     }
 
     return () => {
@@ -109,7 +108,7 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
         unsubscribe();
       }
     }
-  }, [loggedInUser, fetchUserChatList]);
+  }, [loggedInUser?.id, fetchUserChatList]);
 
 
   useEffect(() => {
@@ -131,6 +130,8 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
         } as Message;
       });
       setMessages((prev) => ({ ...prev, [selectedUser.id]: newMessages }));
+    }, (error) => {
+        console.error("Error in messages snapshot listener:", error);
     });
 
     return () => unsubscribe();
@@ -341,3 +342,5 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
     </div>
   );
 }
+
+    
