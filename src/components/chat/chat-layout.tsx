@@ -206,7 +206,7 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
           chatUsers: arrayUnion(loggedInUser.id),
       });
 
-      // Create a chat document for them
+      // Create a chat document for them if it doesn't exist
       const chatId = getChatId(loggedInUser.id, userToAdd.id);
       const chatDocRef = doc(db, "chats", chatId);
       const chatDoc = await getDoc(chatDocRef);
@@ -236,16 +236,21 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
   const handleRemoveUser = async (userId: string) => {
     if (!loggedInUser) return;
     try {
-      const userDocRef = doc(db, "users", loggedInUser.id);
-      await updateDoc(userDocRef, {
+      const loggedInUserDocRef = doc(db, "users", loggedInUser.id);
+      await updateDoc(loggedInUserDocRef, {
         chatUsers: arrayRemove(userId),
       });
       
-      // Optionally, remove the loggedInUser from the other user's chat list as well
       const otherUserDocRef = doc(db, "users", userId);
       await updateDoc(otherUserDocRef, {
         chatUsers: arrayRemove(loggedInUser.id),
       });
+
+      // Update the local state to reflect the removal
+      setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
+      if (selectedUser?.id === userId) {
+          setSelectedUser(users.length > 1 ? users.filter(user => user.id !== userId)[0] : null);
+      }
 
       toast({
           title: "User removed",
