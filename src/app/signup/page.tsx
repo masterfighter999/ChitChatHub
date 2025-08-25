@@ -14,15 +14,18 @@ import { Label } from "@/components/ui/label";
 import { UserPlus } from "lucide-react";
 import Link from 'next/link';
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function SignupPage() {
   const router = useRouter();
+  const [fullName, setFullName] = useState("");
 
   const handleSignup = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     // In a real app, you'd have user creation logic here.
     // For now, we'll just redirect to the home page and log the user in.
     localStorage.setItem('userIsLoggedIn', 'true');
+    localStorage.setItem('loggedInUserName', fullName);
     router.push('/');
   };
 
@@ -46,7 +49,13 @@ export default function SignupPage() {
               <div className="grid gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="full-name">Full name</Label>
-                  <Input id="full-name" placeholder="Alex Doe" required />
+                  <Input 
+                    id="full-name" 
+                    placeholder="Alex Doe" 
+                    required 
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                  />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email</Label>

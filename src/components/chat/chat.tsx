@@ -1,8 +1,8 @@
+
 "use client";
 
 import { motion } from "framer-motion";
 import type { Message, User, LoggedInUser } from "@/data/mock";
-import { loggedInUser } from "@/data/mock";
 import { ChatHeader } from "./chat-header";
 import { ChatMessages } from "./chat-messages";
 import { ChatInput } from "./chat-input";
@@ -13,9 +13,10 @@ interface ChatProps {
   messages: Message[];
   onSendMessage: (message: string) => void;
   isLoading: boolean;
+  loggedInUser: LoggedInUser;
 }
 
-export function Chat({ user, messages, onSendMessage, isLoading }: ChatProps) {
+export function Chat({ user, messages, onSendMessage, isLoading, loggedInUser }: ChatProps) {
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredMessages = messages.filter((message) =>

@@ -1,15 +1,17 @@
+
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { filterProfanity } from "@/lib/profanity";
 import {
   users,
   messages as initialMessages,
-  loggedInUser,
+  getLoggedInUser,
   Message,
   User,
+  LoggedInUser,
 } from "@/data/mock";
 import { Sidebar } from "./sidebar";
 import { Chat } from "./chat";
@@ -19,9 +21,18 @@ export function ChatLayout() {
   const [selectedUser, setSelectedUser] = useState<User>(users[0]);
   const [messages, setMessages] = useState<Record<string, Message[]>>(initialMessages);
   const [isLoading, setIsLoading] = useState(false);
+  const [loggedInUser, setLoggedInUser] = useState<LoggedInUser | null>(null);
   const { toast } = useToast();
 
+  useEffect(() => {
+    // This check is to prevent server-side rendering errors
+    if (typeof window !== 'undefined') {
+      setLoggedInUser(getLoggedInUser());
+    }
+  }, []);
+
   const handleSendMessage = async (text: string) => {
+    if (!loggedInUser) return;
     setIsLoading(true);
     try {
       const filteredText = filterProfanity(text);
@@ -47,7 +58,7 @@ export function ChatLayout() {
 
       setMessages((prev) => ({
         ...prev,
-        [selectedUser.id]: [...(prev[selectedUser.id] || []), newMessage],
+        [selectedUser.id]: [...(prev[selected.id] || []), newMessage],
       }));
 
       // Simulate a reply
@@ -76,6 +87,11 @@ export function ChatLayout() {
     }
   };
 
+  if (!loggedInUser) {
+    // You can render a loading spinner here while the user data is being fetched.
+    return null;
+  }
+
   return (
     <div className="h-full w-full max-w-7xl mx-auto flex rounded-2xl shadow-2xl shadow-primary/10 border bg-card/40 backdrop-blur-lg">
       <Sidebar
@@ -91,6 +107,7 @@ export function ChatLayout() {
           messages={messages[selectedUser.id] || []}
           onSendMessage={handleSendMessage}
           isLoading={isLoading}
+          loggedInUser={loggedInUser}
         />
       </AnimatePresence>
     </div>

@@ -1,3 +1,4 @@
+
 export interface User {
   id: string;
   name: string;
@@ -14,11 +15,18 @@ export interface Message {
   timestamp: Date;
 }
 
-export const loggedInUser: LoggedInUser = {
-  id: "user0",
-  name: "Alex Doe",
-  avatar: `https://i.pravatar.cc/150?u=user0`,
-  online: true,
+// This function now dynamically gets the logged-in user's name.
+export function getLoggedInUser(): LoggedInUser {
+  let name = "Alex Doe"; // Default name
+  if (typeof window !== 'undefined') {
+    name = localStorage.getItem('loggedInUserName') || "Alex Doe";
+  }
+  return {
+    id: "user0",
+    name: name,
+    avatar: `https://i.pravatar.cc/150?u=user0`,
+    online: true,
+  };
 };
 
 export const users: User[] = [
@@ -53,6 +61,8 @@ export const users: User[] = [
     online: true,
   },
 ];
+
+const loggedInUser = getLoggedInUser();
 
 export const messages: Record<string, Message[]> = {
   user1: [
