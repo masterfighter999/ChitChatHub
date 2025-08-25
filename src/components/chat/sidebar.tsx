@@ -1,11 +1,13 @@
 
 "use client";
 
-import { CircleUser, LogOut } from "lucide-react";
+import { useState } from 'react';
+import { LogOut, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { User, LoggedInUser } from "@/data/mock";
 import { UserAvatar } from "./user-avatar";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ChitChatHubLogo } from "@/components/icons";
 import { useRouter } from 'next/navigation';
@@ -15,15 +17,25 @@ interface SidebarProps {
   loggedInUser: LoggedInUser;
   selectedUser: User;
   onSelectUser: (user: User) => void;
+  onAddUser: (email: string) => void;
 }
 
-export function Sidebar({ users, loggedInUser, selectedUser, onSelectUser }: SidebarProps) {
+export function Sidebar({ users, loggedInUser, selectedUser, onSelectUser, onAddUser }: SidebarProps) {
   const router = useRouter();
+  const [email, setEmail] = useState('');
 
   const handleLogout = () => {
     localStorage.removeItem('userIsLoggedIn');
     router.push('/login');
   };
+
+  const handleAddUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    if(email.trim()) {
+        onAddUser(email);
+        setEmail('');
+    }
+  }
 
   return (
     <aside className="w-80 border-r flex flex-col bg-background/60 backdrop-blur-lg">
@@ -32,6 +44,21 @@ export function Sidebar({ users, loggedInUser, selectedUser, onSelectUser }: Sid
           <ChitChatHubLogo className="h-8 w-8 text-primary" />
           <h1 className="text-xl font-bold text-foreground">ChitChatHub</h1>
         </div>
+      </div>
+      <div className="p-4 border-b">
+        <h2 className="text-md font-semibold text-foreground mb-2">Add a new user</h2>
+        <form onSubmit={handleAddUser} className="flex gap-2">
+            <Input 
+                type="email"
+                placeholder="user@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="h-9"
+            />
+            <Button type="submit" size="icon" className="h-9 w-9">
+                <UserPlus className="h-4 w-4" />
+            </Button>
+        </form>
       </div>
       <div className="flex-1 overflow-y-auto">
         <h2 className="p-4 text-lg font-semibold text-foreground">Online Users</h2>

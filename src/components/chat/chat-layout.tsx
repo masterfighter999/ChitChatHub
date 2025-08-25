@@ -6,7 +6,8 @@ import { AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { filterProfanity } from "@/lib/profanity";
 import {
-  users,
+  allUsers,
+  initialChatUsers,
   messages as initialMessages,
   getLoggedInUser,
   Message,
@@ -18,7 +19,8 @@ import { Chat } from "./chat";
 import { moderateMessage, ModerateMessageOutput } from "@/ai/flows/moderate-messages";
 
 export function ChatLayout() {
-  const [selectedUser, setSelectedUser] = useState<User>(users[0]);
+  const [users, setUsers] = useState<User[]>(initialChatUsers);
+  const [selectedUser, setSelectedUser] = useState<User>(initialChatUsers[0]);
   const [messages, setMessages] = useState<Record<string, Message[]>>(initialMessages);
   const [isLoading, setIsLoading] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState<LoggedInUser | null>(null);
@@ -58,7 +60,7 @@ export function ChatLayout() {
 
       setMessages((prev) => ({
         ...prev,
-        [selectedUser.id]: [...(prev[selected.id] || []), newMessage],
+        [selectedUser.id]: [...(prev[selectedUser.id] || []), newMessage],
       }));
 
       // Simulate a reply
@@ -87,6 +89,32 @@ export function ChatLayout() {
     }
   };
 
+  const handleAddUser = (email: string) => {
+    const userToAdd = allUsers.find(user => user.email.toLowerCase() === email.toLowerCase());
+  
+    if (!userToAdd) {
+      toast({
+        variant: "destructive",
+        title: "User not found",
+        description: "No user with that email exists.",
+      });
+      return;
+    }
+
+    if(users.some(user => user.id === userToAdd.id)) {
+        toast({
+            variant: "destructive",
+            title: "User already in list",
+            description: "This user is already in your chat list.",
+        });
+        return;
+    }
+  
+    setUsers(prevUsers => [...prevUsers, userToAdd]);
+    setSelectedUser(userToAdd);
+  };
+  
+
   if (!loggedInUser) {
     // You can render a loading spinner here while the user data is being fetched.
     return null;
@@ -99,6 +127,7 @@ export function ChatLayout() {
         loggedInUser={loggedInUser}
         selectedUser={selectedUser}
         onSelectUser={setSelectedUser}
+        onAddUser={handleAddUser}
       />
       <AnimatePresence>
         <Chat

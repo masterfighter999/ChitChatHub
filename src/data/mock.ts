@@ -4,6 +4,7 @@ export interface User {
   name: string;
   avatar: string;
   online: boolean;
+  email: string;
 }
 
 export interface LoggedInUser extends User {}
@@ -26,41 +27,50 @@ export function getLoggedInUser(): LoggedInUser {
     name: name,
     avatar: `https://i.pravatar.cc/150?u=user0`,
     online: true,
+    email: "guest@example.com",
   };
 };
 
-export const users: User[] = [
-  {
-    id: "user1",
-    name: "Jane Smith",
-    avatar: `https://i.pravatar.cc/150?u=user1`,
-    online: true,
-  },
-  {
-    id: "user2",
-    name: "Bob Johnson",
-    avatar: `https://i.pravatar.cc/150?u=user2`,
-    online: false,
-  },
-  {
-    id: "user3",
-    name: "Alice Williams",
-    avatar: `https://i.pravatar.cc/150?u=user3`,
-    online: true,
-  },
-  {
-    id: "user4",
-    name: "Charlie Brown",
-    avatar: `https://i.pravatar.cc/150?u=user4`,
-    online: false,
-  },
-  {
-    id: "user5",
-    name: "Diana Miller",
-    avatar: `https://i.pravatar.cc/150?u=user5`,
-    online: true,
-  },
-];
+export const allUsers: User[] = [
+    {
+      id: "user1",
+      name: "Jane Smith",
+      avatar: `https://i.pravatar.cc/150?u=user1`,
+      online: true,
+      email: "jane.smith@example.com",
+    },
+    {
+      id: "user2",
+      name: "Bob Johnson",
+      avatar: `https://i.pravatar.cc/150?u=user2`,
+      online: false,
+      email: "bob.johnson@example.com",
+    },
+    {
+      id: "user3",
+      name: "Alice Williams",
+      avatar: `https://i.pravatar.cc/150?u=user3`,
+      online: true,
+      email: "alice.williams@example.com",
+    },
+    {
+      id: "user4",
+      name: "Charlie Brown",
+      avatar: `https://i.pravatar.cc/150?u=user4`,
+      online: false,
+      email: "charlie.brown@example.com",
+    },
+    {
+      id: "user5",
+      name: "Diana Miller",
+      avatar: `https://i.pravatar.cc/150?u=user5`,
+      online: true,
+      email: "diana.miller@example.com",
+    },
+  ];
+
+export const initialChatUsers: User[] = allUsers.slice(0, 3);
+
 
 const loggedInUser = getLoggedInUser();
 
@@ -68,7 +78,7 @@ export const messages: Record<string, Message[]> = {
   user1: [
     {
       id: 1,
-      sender: users[0],
+      sender: allUsers[0],
       text: "Hey Alex! How's it going?",
       timestamp: new Date(Date.now() - 1000 * 60 * 5),
     },
@@ -80,7 +90,7 @@ export const messages: Record<string, Message[]> = {
     },
     {
       id: 3,
-      sender: users[0],
+      sender: allUsers[0],
       text: "Oh cool! It looks amazing. The liquid glass UI is a nice touch.",
       timestamp: new Date(Date.now() - 1000 * 60 * 3),
     },
@@ -96,7 +106,7 @@ export const messages: Record<string, Message[]> = {
   user3: [
     {
       id: 5,
-      sender: users[2],
+      sender: allUsers[2],
       text: "Can you send over the project files?",
       timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
     },
@@ -111,7 +121,7 @@ export const messages: Record<string, Message[]> = {
   user5: [
     {
       id: 7,
-      sender: users[4],
+      sender: allUsers[4],
       text: "Let's catch up sometime this week!",
       timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24),
     },
