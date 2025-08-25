@@ -64,7 +64,6 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
           setUsers(chatUsers);
 
           if (chatUsers.length > 0) {
-            // If there's no selected user, or the selected user is no longer in the chat list, select the first user.
             if (!selectedUser || !chatUsers.some(u => u.id === selectedUser.id)) {
               setSelectedUser(chatUsers[0]);
             }
@@ -195,6 +194,19 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
         return;
       }
       
+      // Proactively create the chat document
+      const chatId = getChatId(loggedInUser.id, userToAdd.id);
+      const chatDocRef = doc(db, "chats", chatId);
+      const chatDoc = await getDoc(chatDocRef);
+
+      if (!chatDoc.exists()) {
+        await setDoc(chatDocRef, {
+          users: [loggedInUser.id, userToAdd.id],
+          lastMessage: null,
+        });
+      }
+
+      // Add user to each other's chat list
       const loggedInUserDocRef = doc(db, "users", loggedInUser.id);
       await updateDoc(loggedInUserDocRef, {
         chatUsers: arrayUnion(userToAdd.id),
@@ -204,17 +216,6 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
       await updateDoc(otherUserDocRef, {
           chatUsers: arrayUnion(loggedInUser.id),
       });
-
-      const chatId = getChatId(loggedInUser.id, userToAdd.id);
-      const chatDocRef = doc(db, "chats", chatId);
-      const chatDoc = await getDoc(chatDocRef);
-
-      if (!chatDoc.exists()) {
-          await setDoc(chatDocRef, {
-              users: [loggedInUser.id, userToAdd.id],
-              lastMessage: null,
-          });
-      }
 
       toast({
           title: "User Added",
