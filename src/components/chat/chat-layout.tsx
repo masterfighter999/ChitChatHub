@@ -42,13 +42,14 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
     return [uid1, uid2].sort().join('_');
   };
 
-  const fetchUserChatList = useCallback(async () => {
+  const fetchUserChatList = useCallback(() => {
     if (!loggedInUser?.id) return;
+
     const userDocRef = doc(db, "users", loggedInUser.id);
     
-    const unsubscribe = onSnapshot(userDocRef, async (docSnap) => {
-      if (docSnap.exists()) {
-        const userData = docSnap.data();
+    const unsubscribe = onSnapshot(userDocRef, async (userDoc) => {
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
         const chatUserIds = userData.chatUsers || [];
 
         if (chatUserIds.length > 0) {
@@ -62,9 +63,12 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
           
           setUsers(chatUsers);
 
-          if (chatUsers.length > 0 && (!selectedUser || !chatUsers.some(u => u.id === selectedUser.id))) {
-            setSelectedUser(chatUsers[0]);
-          } else if (chatUsers.length === 0) {
+          if (chatUsers.length > 0) {
+            // If there's no selected user, or the selected user is no longer in the chat list, select the first user.
+            if (!selectedUser || !chatUsers.some(u => u.id === selectedUser.id)) {
+              setSelectedUser(chatUsers[0]);
+            }
+          } else {
             setSelectedUser(null);
           }
         } else {
@@ -75,13 +79,11 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
     });
 
     return unsubscribe;
-  }, [loggedInUser, selectedUser]);
+  }, [loggedInUser?.id, selectedUser]);
   
   useEffect(() => {
-    let unsubscribe: (() => void) | undefined;
-    if (loggedInUser?.id) {
-        fetchUserChatList().then(unsub => unsubscribe = unsub);
-    }
+    if (!loggedInUser?.id) return;
+    const unsubscribe = fetchUserChatList();
     return () => {
       if (unsubscribe) unsubscribe();
     }
@@ -193,7 +195,6 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
         return;
       }
       
-      // Add user to both users' chatUsers list
       const loggedInUserDocRef = doc(db, "users", loggedInUser.id);
       await updateDoc(loggedInUserDocRef, {
         chatUsers: arrayUnion(userToAdd.id),
@@ -204,7 +205,6 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
           chatUsers: arrayUnion(loggedInUser.id),
       });
 
-      // Create a chat document for them if it doesn't exist
       const chatId = getChatId(loggedInUser.id, userToAdd.id);
       const chatDocRef = doc(db, "chats", chatId);
       const chatDoc = await getDoc(chatDocRef);
@@ -244,10 +244,10 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
         chatUsers: arrayRemove(loggedInUser.id),
       });
 
-      // Update the local state to reflect the removal
       setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
       if (selectedUser?.id === userId) {
-          setSelectedUser(users.length > 1 ? users.filter(user => user.id !== userId)[0] : null);
+          const remainingUsers = users.filter(user => user.id !== userId);
+          setSelectedUser(remainingUsers.length > 0 ? remainingUsers[0] : null);
       }
 
       toast({
