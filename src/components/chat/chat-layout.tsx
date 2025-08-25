@@ -25,6 +25,7 @@ import {
   arrayRemove,
   getDoc,
   documentId,
+  writeBatch,
 } from "firebase/firestore";
 
 interface ChatLayoutProps {
@@ -64,13 +65,16 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
           setUsers(chatUsers);
 
           if (chatUsers.length > 0) {
+            // If there's no selected user, or the selected user is no longer in the chat list, select the first one.
             if (!selectedUser || !chatUsers.some(u => u.id === selectedUser.id)) {
               setSelectedUser(chatUsers[0]);
             }
           } else {
+            // If there are no chat users, clear the selection.
             setSelectedUser(null);
           }
         } else {
+          // If the chatUsers array is empty, clear users and selection.
           setUsers([]);
           setSelectedUser(null);
         }
@@ -194,28 +198,28 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
         return;
       }
       
-      // Proactively create the chat document
+      const batch = writeBatch(db);
+
+      // 1. Proactively create the chat document
       const chatId = getChatId(loggedInUser.id, userToAdd.id);
       const chatDocRef = doc(db, "chats", chatId);
-      const chatDoc = await getDoc(chatDocRef);
+      batch.set(chatDocRef, {
+        users: [loggedInUser.id, userToAdd.id],
+        lastMessage: null,
+      }, { merge: true }); // Use merge to avoid overwriting if it somehow exists
 
-      if (!chatDoc.exists()) {
-        await setDoc(chatDocRef, {
-          users: [loggedInUser.id, userToAdd.id],
-          lastMessage: null,
-        });
-      }
-
-      // Add user to each other's chat list
+      // 2. Add user to each other's chat list
       const loggedInUserDocRef = doc(db, "users", loggedInUser.id);
-      await updateDoc(loggedInUserDocRef, {
+      batch.update(loggedInUserDocRef, {
         chatUsers: arrayUnion(userToAdd.id),
       });
 
       const otherUserDocRef = doc(db, "users", userToAdd.id);
-      await updateDoc(otherUserDocRef, {
+      batch.update(otherUserDocRef, {
           chatUsers: arrayUnion(loggedInUser.id),
       });
+
+      await batch.commit();
 
       toast({
           title: "User Added",
@@ -227,7 +231,7 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to add user.",
+        description: "Failed to add user. Check permissions and try again.",
       });
     }
   };
@@ -235,26 +239,28 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
   const handleRemoveUser = async (userId: string) => {
     if (!loggedInUser) return;
     try {
-      const loggedInUserDocRef = doc(db, "users", loggedInUser.id);
-      await updateDoc(loggedInUserDocRef, {
-        chatUsers: arrayRemove(userId),
-      });
-      
-      const otherUserDocRef = doc(db, "users", userId);
-      await updateDoc(otherUserDocRef, {
-        chatUsers: arrayRemove(loggedInUser.id),
-      });
+        const batch = writeBatch(db);
 
-      setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
-      if (selectedUser?.id === userId) {
-          const remainingUsers = users.filter(user => user.id !== userId);
-          setSelectedUser(remainingUsers.length > 0 ? remainingUsers[0] : null);
-      }
+        // Remove from each other's chat list
+        const loggedInUserDocRef = doc(db, "users", loggedInUser.id);
+        batch.update(loggedInUserDocRef, {
+            chatUsers: arrayRemove(userId),
+        });
+        
+        const otherUserDocRef = doc(db, "users", userId);
+        batch.update(otherUserDocRef, {
+            chatUsers: arrayRemove(loggedInUser.id),
+        });
+        
+        await batch.commit();
 
-      toast({
-          title: "User removed",
-          description: "The user has been removed from your chat list."
-      })
+        // No need to manually update state, onSnapshot will handle it.
+        // If the removed user was selected, the logic in fetchUserChatList will select a new one.
+
+        toast({
+            title: "User removed",
+            description: "The user has been removed from your chat list."
+        })
     } catch (error) {
         console.error("Error removing user:", error);
         toast({
