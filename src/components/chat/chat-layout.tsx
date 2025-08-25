@@ -51,17 +51,23 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
         if (userDocSnap.exists()) {
           const userData = userDocSnap.data();
           const chatUserIds = userData.chatUsers || [];
+          
           if (chatUserIds.length > 0) {
             const usersQuery = query(collection(db, 'users'), where(documentId(), 'in', chatUserIds));
             const usersSnapshot = await getDocs(usersQuery);
             const chatUsers = usersSnapshot.docs.map(doc => ({
               id: doc.id,
-              ...doc.data()
+              ...doc.data(),
+              online: doc.data().online || false, // Ensure online status is set
             })) as User[];
+            
             setUsers(chatUsers);
-            if (chatUsers.length > 0 && (!selectedUser || !chatUserIds.includes(selectedUser.id))) {
-              setSelectedUser(chatUsers[0]);
-            } else if (chatUsers.length === 0) {
+
+            if (chatUsers.length > 0) {
+               if (!selectedUser || !chatUsers.find(u => u.id === selectedUser.id)) {
+                setSelectedUser(chatUsers[0]);
+              }
+            } else {
               setSelectedUser(null);
             }
           } else {
@@ -70,7 +76,7 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
           }
         }
       });
-      return () => unsubscribe();
+      return unsubscribe;
 
     } catch (error) {
       console.error("Error fetching user chat list:", error);
@@ -83,9 +89,17 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
   }, [loggedInUser, toast, selectedUser]);
   
   useEffect(() => {
-    const unsubscribePromise = fetchUserChatList();
+    let unsubscribe: (() => void) | undefined;
+    
+    const setupListener = async () => {
+      unsubscribe = await fetchUserChatList();
+    }
+    setupListener();
+
     return () => {
-      unsubscribePromise?.then(unsub => unsub && unsub());
+      if (unsubscribe) {
+        unsubscribe();
+      }
     }
   }, [loggedInUser, fetchUserChatList]);
 
