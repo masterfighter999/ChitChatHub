@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from 'react';
-import { LogOut, UserPlus } from "lucide-react";
+import { LogOut, UserPlus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { User, LoggedInUser } from "@/data/mock";
 import { UserAvatar } from "./user-avatar";
@@ -18,9 +18,10 @@ interface SidebarProps {
   selectedUser: User;
   onSelectUser: (user: User) => void;
   onAddUser: (email: string) => void;
+  onRemoveUser: (userId: string) => void;
 }
 
-export function Sidebar({ users, loggedInUser, selectedUser, onSelectUser, onAddUser }: SidebarProps) {
+export function Sidebar({ users, loggedInUser, selectedUser, onSelectUser, onAddUser, onRemoveUser }: SidebarProps) {
   const router = useRouter();
   const [email, setEmail] = useState('');
 
@@ -65,35 +66,55 @@ export function Sidebar({ users, loggedInUser, selectedUser, onSelectUser, onAdd
         <div className="px-2 space-y-1">
           <TooltipProvider delayDuration={0}>
           {users.map((user) => (
-            <Tooltip key={user.id}>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => onSelectUser(user)}
-                  className={cn(
-                    "w-full flex items-center gap-3 p-2 rounded-lg text-left transition-colors",
-                    selectedUser.id === user.id
-                      ? "bg-primary/20 text-primary-foreground"
-                      : "hover:bg-accent"
-                  )}
-                >
-                  <div className="relative">
-                    <UserAvatar user={user} className="w-10 h-10" />
-                    {user.online && (
-                      <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-background" />
+            <div key={user.id} className="relative group/user-item">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => onSelectUser(user)}
+                    className={cn(
+                      "w-full flex items-center gap-3 p-2 rounded-lg text-left transition-colors",
+                      selectedUser?.id === user.id
+                        ? "bg-primary/20 text-primary-foreground"
+                        : "hover:bg-accent"
                     )}
-                  </div>
-                  <div className="flex-1 truncate">
-                    <p className="font-semibold text-foreground">{user.name}</p>
-                    <p className="text-sm text-muted-foreground truncate">
-                      {user.online ? 'Online' : 'Offline'}
-                    </p>
-                  </div>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                <p>{user.name}</p>
-              </TooltipContent>
-            </Tooltip>
+                  >
+                    <div className="relative">
+                      <UserAvatar user={user} className="w-10 h-10" />
+                      {user.online && (
+                        <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-background" />
+                      )}
+                    </div>
+                    <div className="flex-1 truncate">
+                      <p className="font-semibold text-foreground">{user.name}</p>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {user.online ? 'Online' : 'Offline'}
+                      </p>
+                    </div>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>{user.name}</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-1/2 right-2 -translate-y-1/2 h-7 w-7 text-muted-foreground opacity-0 group-hover/user-item:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onRemoveUser(user.id)
+                        }}
+                    >
+                        <X className="w-4 h-4" />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                    <p>Remove User</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
           ))}
           </TooltipProvider>
         </div>

@@ -113,6 +113,20 @@ export function ChatLayout() {
     setUsers(prevUsers => [...prevUsers, userToAdd]);
     setSelectedUser(userToAdd);
   };
+
+  const handleRemoveUser = (userId: string) => {
+    setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
+    // If the removed user was the selected user, select the first user in the list
+    if (selectedUser.id === userId && users.length > 1) {
+      const newSelectedUser = users.find(user => user.id !== userId);
+      if(newSelectedUser) {
+        setSelectedUser(newSelectedUser);
+      }
+    } else if (users.length === 1) {
+        // Handle case where the last user is removed
+        // Ideally, you'd show a "no users" state
+    }
+  };
   
 
   if (!loggedInUser) {
@@ -128,16 +142,23 @@ export function ChatLayout() {
         selectedUser={selectedUser}
         onSelectUser={setSelectedUser}
         onAddUser={handleAddUser}
+        onRemoveUser={handleRemoveUser}
       />
       <AnimatePresence>
-        <Chat
-          key={selectedUser.id}
-          user={selectedUser}
-          messages={messages[selectedUser.id] || []}
-          onSendMessage={handleSendMessage}
-          isLoading={isLoading}
-          loggedInUser={loggedInUser}
-        />
+        {users.length > 0 ? (
+            <Chat
+                key={selectedUser.id}
+                user={selectedUser}
+                messages={messages[selectedUser.id] || []}
+                onSendMessage={handleSendMessage}
+                isLoading={isLoading}
+                loggedInUser={loggedInUser}
+            />
+        ) : (
+            <div className="flex-1 flex items-center justify-center">
+                <p className="text-muted-foreground">No users in your chat list. Add one to start chatting!</p>
+            </div>
+        )}
       </AnimatePresence>
     </div>
   );
