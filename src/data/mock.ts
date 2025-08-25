@@ -16,16 +16,18 @@ export interface Message {
   timestamp: Date;
 }
 
-// This function now dynamically gets the logged-in user's name.
+// This function now dynamically gets the logged-in user's name and avatar.
 export function getLoggedInUser(): LoggedInUser {
   let name = "Alex Doe"; // Default name
+  let avatar = `https://i.pravatar.cc/150?u=user0`; // Default avatar
   if (typeof window !== 'undefined') {
     name = localStorage.getItem('loggedInUserName') || "Alex Doe";
+    avatar = localStorage.getItem('loggedInUserAvatar') || `https://i.pravatar.cc/150?u=user0`;
   }
   return {
     id: "user0",
     name: name,
-    avatar: `https://i.pravatar.cc/150?u=user0`,
+    avatar: avatar,
     online: true,
     email: "guest@example.com",
   };

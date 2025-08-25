@@ -155,6 +155,18 @@ export function ChatLayout() {
         }
     }
   };
+
+  const handleProfileUpdate = (newAvatarUrl: string) => {
+    if (loggedInUser) {
+      const updatedUser = { ...loggedInUser, avatar: newAvatarUrl };
+      setLoggedInUser(updatedUser);
+      localStorage.setItem('loggedInUserAvatar', newAvatarUrl);
+      toast({
+        title: "Profile Updated",
+        description: "Your profile picture has been changed.",
+      });
+    }
+  };
   
 
   if (!loggedInUser) {
@@ -171,6 +183,7 @@ export function ChatLayout() {
         onSelectUser={setSelectedUser}
         onAddUser={handleAddUser}
         onRemoveUser={handleRemoveUser}
+        onProfileUpdate={handleProfileUpdate}
       />
       <AnimatePresence>
         {selectedUser ? (

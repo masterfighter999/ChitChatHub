@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from 'react';
-import { LogOut, UserPlus, X } from "lucide-react";
+import { LogOut, UserPlus, X, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { User, LoggedInUser } from "@/data/mock";
 import { UserAvatar } from "./user-avatar";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ChitChatHubLogo } from "@/components/icons";
 import { useRouter } from 'next/navigation';
+import { EditProfileDialog } from './edit-profile-dialog';
 
 interface SidebarProps {
   users: User[];
@@ -19,16 +20,18 @@ interface SidebarProps {
   onSelectUser: (user: User) => void;
   onAddUser: (email: string) => void;
   onRemoveUser: (userId: string) => void;
+  onProfileUpdate: (avatarUrl: string) => void;
 }
 
-export function Sidebar({ users, loggedInUser, selectedUser, onSelectUser, onAddUser, onRemoveUser }: SidebarProps) {
+export function Sidebar({ users, loggedInUser, selectedUser, onSelectUser, onAddUser, onRemoveUser, onProfileUpdate }: SidebarProps) {
   const router = useRouter();
   const [email, setEmail] = useState('');
+  const [isProfileDialogOpen, setProfileDialogOpen] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem('userIsLoggedIn');
     localStorage.removeItem('loggedInUserName');
-    // We could also clear the user-specific chat list here, but let's keep it for when they log back in.
+    localStorage.removeItem('loggedInUserAvatar');
     router.push('/login');
   };
 
@@ -130,18 +133,26 @@ export function Sidebar({ users, loggedInUser, selectedUser, onSelectUser, onAdd
               <p className="text-sm text-muted-foreground">My Account</p>
             </div>
           </div>
-          <TooltipProvider delayDuration={0}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={handleLogout}>
-                  <LogOut className="w-5 h-5 text-muted-foreground" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top">
-                <p>Logout</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <div className='flex items-center'>
+            <EditProfileDialog 
+                isOpen={isProfileDialogOpen}
+                setIsOpen={setProfileDialogOpen}
+                user={loggedInUser}
+                onProfileUpdate={onProfileUpdate}
+            />
+            <TooltipProvider delayDuration={0}>
+                <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={handleLogout}>
+                    <LogOut className="w-5 h-5 text-muted-foreground" />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                    <p>Logout</p>
+                </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
       </div>
     </aside>
