@@ -15,7 +15,7 @@ import { useRouter } from 'next/navigation';
 interface SidebarProps {
   users: User[];
   loggedInUser: LoggedInUser;
-  selectedUser: User;
+  selectedUser: User | null;
   onSelectUser: (user: User) => void;
   onAddUser: (email: string) => void;
   onRemoveUser: (userId: string) => void;
@@ -27,6 +27,8 @@ export function Sidebar({ users, loggedInUser, selectedUser, onSelectUser, onAdd
 
   const handleLogout = () => {
     localStorage.removeItem('userIsLoggedIn');
+    localStorage.removeItem('loggedInUserName');
+    // We could also clear the user-specific chat list here, but let's keep it for when they log back in.
     router.push('/login');
   };
 

@@ -79,20 +79,14 @@ export const messages: Record<string, Message[]> = {
     {
       id: 1,
       sender: allUsers[0],
-      text: "Hey Alex! How's it going?",
+      text: "Hey! How's it going?",
       timestamp: new Date(Date.now() - 1000 * 60 * 5),
     },
     {
       id: 2,
       sender: loggedInUser,
-      text: "Hey Jane! I'm doing great, thanks for asking. Just working on this new chat app.",
+      text: "I'm doing great, thanks for asking.",
       timestamp: new Date(Date.now() - 1000 * 60 * 4),
-    },
-    {
-      id: 3,
-      sender: allUsers[0],
-      text: "Oh cool! It looks amazing. The liquid glass UI is a nice touch.",
-      timestamp: new Date(Date.now() - 1000 * 60 * 3),
     },
   ],
   user2: [
@@ -110,20 +104,7 @@ export const messages: Record<string, Message[]> = {
       text: "Can you send over the project files?",
       timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
     },
-    {
-      id: 6,
-      sender: loggedInUser,
-      text: "Sure, I'll send them over in a bit.",
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 1),
-    },
   ],
   user4: [],
-  user5: [
-    {
-      id: 7,
-      sender: allUsers[4],
-      text: "Let's catch up sometime this week!",
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24),
-    },
-  ],
+  user5: [],
 };

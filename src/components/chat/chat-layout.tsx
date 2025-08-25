@@ -19,8 +19,8 @@ import { Chat } from "./chat";
 import { moderateMessage, ModerateMessageOutput } from "@/ai/flows/moderate-messages";
 
 export function ChatLayout() {
-  const [users, setUsers] = useState<User[]>(initialChatUsers);
-  const [selectedUser, setSelectedUser] = useState<User>(initialChatUsers[0]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [messages, setMessages] = useState<Record<string, Message[]>>(initialMessages);
   const [isLoading, setIsLoading] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState<LoggedInUser | null>(null);
@@ -29,12 +29,35 @@ export function ChatLayout() {
   useEffect(() => {
     // This check is to prevent server-side rendering errors
     if (typeof window !== 'undefined') {
-      setLoggedInUser(getLoggedInUser());
+      const user = getLoggedInUser();
+      setLoggedInUser(user);
+
+      const storedUsersKey = `chatUsers_${user.id}`;
+      const storedUsers = localStorage.getItem(storedUsersKey);
+      
+      let chatUsers: User[];
+      if (storedUsers) {
+        chatUsers = JSON.parse(storedUsers);
+      } else {
+        chatUsers = initialChatUsers;
+        localStorage.setItem(storedUsersKey, JSON.stringify(chatUsers));
+      }
+      setUsers(chatUsers);
+      if (chatUsers.length > 0) {
+        setSelectedUser(chatUsers[0]);
+      }
     }
   }, []);
 
+  const updateUsersInStorage = (updatedUsers: User[]) => {
+      if (loggedInUser) {
+        const storedUsersKey = `chatUsers_${loggedInUser.id}`;
+        localStorage.setItem(storedUsersKey, JSON.stringify(updatedUsers));
+      }
+  }
+
   const handleSendMessage = async (text: string) => {
-    if (!loggedInUser) return;
+    if (!loggedInUser || !selectedUser) return;
     setIsLoading(true);
     try {
       const filteredText = filterProfanity(text);
@@ -110,21 +133,26 @@ export function ChatLayout() {
         return;
     }
   
-    setUsers(prevUsers => [...prevUsers, userToAdd]);
-    setSelectedUser(userToAdd);
+    const newUsers = [...users, userToAdd];
+    setUsers(newUsers);
+    updateUsersInStorage(newUsers);
+
+    if(!selectedUser) {
+        setSelectedUser(userToAdd);
+    }
   };
 
   const handleRemoveUser = (userId: string) => {
-    setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
-    // If the removed user was the selected user, select the first user in the list
-    if (selectedUser.id === userId && users.length > 1) {
-      const newSelectedUser = users.find(user => user.id !== userId);
-      if(newSelectedUser) {
-        setSelectedUser(newSelectedUser);
-      }
-    } else if (users.length === 1) {
-        // Handle case where the last user is removed
-        // Ideally, you'd show a "no users" state
+    const newUsers = users.filter(user => user.id !== userId);
+    setUsers(newUsers);
+    updateUsersInStorage(newUsers);
+
+    if (selectedUser?.id === userId) {
+        if (newUsers.length > 0) {
+            setSelectedUser(newUsers[0]);
+        } else {
+            setSelectedUser(null);
+        }
     }
   };
   
@@ -145,7 +173,7 @@ export function ChatLayout() {
         onRemoveUser={handleRemoveUser}
       />
       <AnimatePresence>
-        {users.length > 0 ? (
+        {selectedUser ? (
             <Chat
                 key={selectedUser.id}
                 user={selectedUser}
