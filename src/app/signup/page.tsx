@@ -11,18 +11,17 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogIn } from "lucide-react";
+import { UserPlus } from "lucide-react";
 import Link from 'next/link';
 import { useRouter } from "next/navigation";
 
-export default function LoginPage() {
+export default function SignupPage() {
   const router = useRouter();
 
-  const handleLogin = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSignup = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // In a real app, you'd have authentication logic here.
-    // For now, we'll just redirect to the home page.
-    // We'll also set a simple flag in localStorage to simulate a logged-in state.
+    // In a real app, you'd have user creation logic here.
+    // For now, we'll just redirect to the home page and log the user in.
     localStorage.setItem('userIsLoggedIn', 'true');
     router.push('/');
   };
@@ -37,14 +36,18 @@ export default function LoginPage() {
       <div className="z-10">
         <Card className="mx-auto max-w-sm w-[350px] shadow-2xl shadow-primary/10 bg-card/40 backdrop-blur-lg">
           <CardHeader>
-            <CardTitle className="text-2xl">Login</CardTitle>
+            <CardTitle className="text-2xl">Sign Up</CardTitle>
             <CardDescription>
-              Enter your email below to login to your account
+              Enter your information to create an account
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleLogin}>
+            <form onSubmit={handleSignup}>
               <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="full-name">Full name</Label>
+                  <Input id="full-name" placeholder="Alex Doe" required />
+                </div>
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email</Label>
                   <Input
@@ -52,24 +55,21 @@ export default function LoginPage() {
                     type="email"
                     placeholder="m@example.com"
                     required
-                    defaultValue="guest@example.com"
                   />
                 </div>
                 <div className="grid gap-2">
-                  <div className="flex items-center">
-                    <Label htmlFor="password">Password</Label>
-                  </div>
-                  <Input id="password" type="password" required defaultValue="password" />
+                  <Label htmlFor="password">Password</Label>
+                  <Input id="password" type="password" required />
                 </div>
                 <Button type="submit" className="w-full">
-                  <LogIn className="mr-2 h-4 w-4" /> Login
+                  <UserPlus className="mr-2 h-4 w-4" /> Create account
                 </Button>
               </div>
             </form>
             <div className="mt-4 text-center text-sm">
-              Don&apos;t have an account?{' '}
-              <Link href="/signup" className="underline">
-                Sign up
+              Already have an account?{' '}
+              <Link href="/login" className="underline">
+                Login
               </Link>
             </div>
           </CardContent>
