@@ -32,7 +32,7 @@ export function Chat({ user, messages, onSendMessage, isLoading, loggedInUser }:
       className="flex flex-col w-full h-full"
     >
       <ChatHeader user={user} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
-      <div className="flex-1 flex flex-col bg-muted/20">
+      <div className="flex-1 flex flex-col bg-muted/20 overflow-hidden">
         <ChatMessages messages={filteredMessages} loggedInUser={loggedInUser} />
         <ChatInput onSendMessage={onSendMessage} isLoading={isLoading} />
       </div>
