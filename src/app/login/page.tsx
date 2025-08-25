@@ -1,3 +1,6 @@
+
+'use client';
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,8 +13,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LogIn } from "lucide-react";
 import Link from 'next/link';
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const router = useRouter();
+
+  const handleLogin = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    // In a real app, you'd have authentication logic here.
+    // For now, we'll just redirect to the home page.
+    // We'll also set a simple flag in localStorage to simulate a logged-in state.
+    localStorage.setItem('userIsLoggedIn', 'true');
+    router.push('/');
+  };
+
   return (
     <main className="relative h-screen w-full flex flex-col items-center justify-center overflow-hidden">
       <div className="absolute top-0 left-0 w-full h-full bg-background z-0">
@@ -28,26 +43,29 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
+            <form onSubmit={handleLogin}>
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="m@example.com"
+                    required
+                    defaultValue="guest@example.com"
+                  />
                 </div>
-                <Input id="password" type="password" required />
+                <div className="grid gap-2">
+                  <div className="flex items-center">
+                    <Label htmlFor="password">Password</Label>
+                  </div>
+                  <Input id="password" type="password" required defaultValue="password" />
+                </div>
+                <Button type="submit" className="w-full">
+                  <LogIn className="mr-2 h-4 w-4" /> Login
+                </Button>
               </div>
-              <Button type="submit" className="w-full">
-                <LogIn className="mr-2 h-4 w-4" /> Login
-              </Button>
-            </div>
+            </form>
             <div className="mt-4 text-center text-sm">
               Don&apos;t have an account?{' '}
               <Link href="#" className="underline">

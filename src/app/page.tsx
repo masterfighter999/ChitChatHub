@@ -1,11 +1,30 @@
+
+'use client';
+
+import { useState, useEffect } from 'react';
 import { ChatLayout } from "@/components/chat/chat-layout";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
-  // For now, we will show a link to the login page.
-  // In a real app, you'd protect this route and redirect if not logged in.
-  const userIsLoggedIn = false;
+  const [userIsLoggedIn, setUserIsLoggedIn] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    setIsClient(true);
+    const loggedIn = localStorage.getItem('userIsLoggedIn') === 'true';
+    setUserIsLoggedIn(loggedIn);
+    if (!loggedIn) {
+      router.push('/login');
+    }
+  }, [router]);
+
+  if (!isClient) {
+    // Render nothing or a loading spinner on the server to avoid hydration mismatch
+    return null;
+  }
 
   return (
     <main className="relative h-screen w-full flex flex-col items-center justify-center overflow-hidden">

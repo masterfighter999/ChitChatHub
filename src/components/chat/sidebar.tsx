@@ -1,3 +1,4 @@
+
 "use client";
 
 import { CircleUser, LogOut } from "lucide-react";
@@ -7,6 +8,7 @@ import { UserAvatar } from "./user-avatar";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ChitChatHubLogo } from "@/components/icons";
+import { useRouter } from 'next/navigation';
 
 interface SidebarProps {
   users: User[];
@@ -16,6 +18,13 @@ interface SidebarProps {
 }
 
 export function Sidebar({ users, loggedInUser, selectedUser, onSelectUser }: SidebarProps) {
+  const router = useRouter();
+
+  const handleLogout = () => {
+    localStorage.removeItem('userIsLoggedIn');
+    router.push('/login');
+  };
+
   return (
     <aside className="w-80 border-r flex flex-col bg-background/60 backdrop-blur-lg">
       <div className="p-4 border-b">
@@ -74,7 +83,7 @@ export function Sidebar({ users, loggedInUser, selectedUser, onSelectUser }: Sid
           <TooltipProvider delayDuration={0}>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" onClick={handleLogout}>
                   <LogOut className="w-5 h-5 text-muted-foreground" />
                 </Button>
               </TooltipTrigger>
