@@ -15,17 +15,16 @@ import {
   where,
   getDocs,
   doc,
-  setDoc,
   onSnapshot,
   addDoc,
   Timestamp,
   orderBy,
   arrayUnion,
-  updateDoc,
-  arrayRemove,
   getDoc,
   documentId,
   writeBatch,
+  updateDoc,
+  arrayRemove,
 } from "firebase/firestore";
 
 interface ChatLayoutProps {
@@ -65,16 +64,13 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
           setUsers(chatUsers);
 
           if (chatUsers.length > 0) {
-            // If there's no selected user, or the selected user is no longer in the chat list, select the first one.
             if (!selectedUser || !chatUsers.some(u => u.id === selectedUser.id)) {
               setSelectedUser(chatUsers[0]);
             }
           } else {
-            // If there are no chat users, clear the selection.
             setSelectedUser(null);
           }
         } else {
-          // If the chatUsers array is empty, clear users and selection.
           setUsers([]);
           setSelectedUser(null);
         }
@@ -114,7 +110,6 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
       setMessages((prev) => ({ ...prev, [selectedUser.id]: newMessages }));
     }, (error) => {
       console.error("Error fetching messages: ", error);
-      // Optional: Toast message for the user if something goes wrong.
     });
 
     return () => unsubscribe();
@@ -165,7 +160,8 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
   };
 
   const handleAddUser = async (email: string) => {
-    if (!loggedInUser) return;
+    if (!loggedInUser || !loggedInUser.email) return;
+
     if (email.toLowerCase() === loggedInUser.email.toLowerCase()) {
         toast({
           variant: "destructive",
@@ -174,6 +170,7 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
         });
         return;
     }
+    
     try {
       const usersRef = collection(db, "users");
       const q = query(usersRef, where("email", "==", email.toLowerCase()));
@@ -234,7 +231,7 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to add user. Check permissions and try again.",
+        description: "Failed to add user. Please check permissions and try again.",
       });
     }
   };
