@@ -44,69 +44,46 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
 
   const fetchUserChatList = useCallback(async () => {
     if (!loggedInUser?.id) return;
-    try {
-      const userDocRef = doc(db, "users", loggedInUser.id);
-      
-      const unsubscribe = onSnapshot(userDocRef, async (userDocSnap) => {
-        if (userDocSnap.exists()) {
-          const userData = userDocSnap.data();
-          const chatUserIds = userData.chatUsers || [];
-          
-          if (chatUserIds.length > 0) {
-            const usersQuery = query(collection(db, 'users'), where(documentId(), 'in', chatUserIds));
-            const usersSnapshot = await getDocs(usersQuery);
-            const chatUsers = usersSnapshot.docs.map(doc => ({
-              id: doc.id,
-              ...doc.data(),
-              online: doc.data().online || false,
-            })) as User[];
-            
-            setUsers(chatUsers);
+    const userDocRef = doc(db, "users", loggedInUser.id);
+    
+    const unsubscribe = onSnapshot(userDocRef, async (docSnap) => {
+      if (docSnap.exists()) {
+        const userData = docSnap.data();
+        const chatUserIds = userData.chatUsers || [];
 
-            if (chatUsers.length > 0 && (!selectedUser || !chatUsers.some(u => u.id === selectedUser.id))) {
-              setSelectedUser(chatUsers[0]);
-            } else if (chatUsers.length === 0) {
-              setSelectedUser(null);
-            }
-          } else {
-            setUsers([]);
+        if (chatUserIds.length > 0) {
+          const usersQuery = query(collection(db, "users"), where(documentId(), "in", chatUserIds));
+          const usersSnapshot = await getDocs(usersQuery);
+          const chatUsers = usersSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            online: doc.data().online || false,
+          })) as User[];
+          
+          setUsers(chatUsers);
+
+          if (chatUsers.length > 0 && (!selectedUser || !chatUsers.some(u => u.id === selectedUser.id))) {
+            setSelectedUser(chatUsers[0]);
+          } else if (chatUsers.length === 0) {
             setSelectedUser(null);
           }
         } else {
-          console.log("Logged-in user document does not exist.");
+          setUsers([]);
+          setSelectedUser(null);
         }
-      }, (error) => {
-          console.error("Error in user snapshot listener:", error);
-          toast({
-            variant: "destructive",
-            title: "Permissions Error",
-            description: "Could not fetch your user data. Please check Firestore rules.",
-          });
-      });
-      return unsubscribe;
+      }
+    });
 
-    } catch (error) {
-      console.error("Error fetching user chat list:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Could not fetch your chat list.",
-      });
-    }
-    return () => {};
-  }, [loggedInUser, toast, selectedUser]);
+    return unsubscribe;
+  }, [loggedInUser, selectedUser]);
   
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
-    
     if (loggedInUser?.id) {
         fetchUserChatList().then(unsub => unsubscribe = unsub);
     }
-
     return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
+      if (unsubscribe) unsubscribe();
     }
   }, [loggedInUser?.id, fetchUserChatList]);
 
@@ -130,8 +107,6 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
         } as Message;
       });
       setMessages((prev) => ({ ...prev, [selectedUser.id]: newMessages }));
-    }, (error) => {
-        console.error("Error in messages snapshot listener:", error);
     });
 
     return () => unsubscribe();
@@ -342,5 +317,3 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
     </div>
   );
 }
-
-    
