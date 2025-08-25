@@ -112,6 +112,9 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
         } as Message;
       });
       setMessages((prev) => ({ ...prev, [selectedUser.id]: newMessages }));
+    }, (error) => {
+      console.error("Error fetching messages: ", error);
+      // Optional: Toast message for the user if something goes wrong.
     });
 
     return () => unsubscribe();
@@ -200,7 +203,7 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
       
       const batch = writeBatch(db);
 
-      // 1. Proactively create the chat document
+      // 1. Proactively create the chat document to prevent race conditions
       const chatId = getChatId(loggedInUser.id, userToAdd.id);
       const chatDocRef = doc(db, "chats", chatId);
       batch.set(chatDocRef, {
@@ -253,9 +256,6 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
         });
         
         await batch.commit();
-
-        // No need to manually update state, onSnapshot will handle it.
-        // If the removed user was selected, the logic in fetchUserChatList will select a new one.
 
         toast({
             title: "User removed",
