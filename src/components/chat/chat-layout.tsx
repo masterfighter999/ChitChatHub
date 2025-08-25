@@ -8,7 +8,7 @@ import { moderateMessage, ModerateMessageOutput } from "@/ai/flows/moderate-mess
 import { Message, User, LoggedInUser } from "@/data/mock";
 import { Sidebar } from "./sidebar";
 import { Chat } from "./chat";
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
 import {
   collection,
   query,
@@ -46,27 +46,32 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
     if (!loggedInUser) return;
     try {
       const userDocRef = doc(db, "users", loggedInUser.id);
-      const userDocSnap = await getDoc(userDocRef);
-
-      if (userDocSnap.exists()) {
-        const userData = userDocSnap.data();
-        const chatUserIds = userData.chatUsers || [];
-        if (chatUserIds.length > 0) {
-          const usersQuery = query(collection(db, 'users'), where(documentId(), 'in', chatUserIds));
-          const usersSnapshot = await getDocs(usersQuery);
-          const chatUsers = usersSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          })) as User[];
-          setUsers(chatUsers);
-          if (chatUsers.length > 0 && !selectedUser) {
-            setSelectedUser(chatUsers[0]);
+      
+      const unsubscribe = onSnapshot(userDocRef, async (userDocSnap) => {
+        if (userDocSnap.exists()) {
+          const userData = userDocSnap.data();
+          const chatUserIds = userData.chatUsers || [];
+          if (chatUserIds.length > 0) {
+            const usersQuery = query(collection(db, 'users'), where(documentId(), 'in', chatUserIds));
+            const usersSnapshot = await getDocs(usersQuery);
+            const chatUsers = usersSnapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            })) as User[];
+            setUsers(chatUsers);
+            if (chatUsers.length > 0 && (!selectedUser || !chatUserIds.includes(selectedUser.id))) {
+              setSelectedUser(chatUsers[0]);
+            } else if (chatUsers.length === 0) {
+              setSelectedUser(null);
+            }
+          } else {
+              setUsers([]);
+              setSelectedUser(null);
           }
-        } else {
-            setUsers([]);
-            setSelectedUser(null);
         }
-      }
+      });
+      return () => unsubscribe();
+
     } catch (error) {
       console.error("Error fetching user chat list:", error);
       toast({
@@ -78,7 +83,10 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
   }, [loggedInUser, toast, selectedUser]);
   
   useEffect(() => {
-    fetchUserChatList();
+    const unsubscribePromise = fetchUserChatList();
+    return () => {
+      unsubscribePromise?.then(unsub => unsub && unsub());
+    }
   }, [loggedInUser, fetchUserChatList]);
 
 
@@ -174,7 +182,9 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
         return;
       }
 
-      const userToAdd = querySnapshot.docs[0].data() as User;
+      const userToAddDoc = querySnapshot.docs[0];
+      const userToAdd = { id: userToAddDoc.id, ...userToAddDoc.data() } as User;
+
 
       if (users.some((user) => user.id === userToAdd.id)) {
         toast({
@@ -185,12 +195,33 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
         return;
       }
       
-      const userDocRef = doc(db, "users", loggedInUser.id);
-      await updateDoc(userDocRef, {
+      // Add user to both users' chatUsers list
+      const loggedInUserDocRef = doc(db, "users", loggedInUser.id);
+      await updateDoc(loggedInUserDocRef, {
         chatUsers: arrayUnion(userToAdd.id),
       });
 
-      fetchUserChatList();
+      const otherUserDocRef = doc(db, "users", userToAdd.id);
+      await updateDoc(otherUserDocRef, {
+          chatUsers: arrayUnion(loggedInUser.id),
+      });
+
+      // Create a chat document for them
+      const chatId = getChatId(loggedInUser.id, userToAdd.id);
+      const chatDocRef = doc(db, "chats", chatId);
+      const chatDoc = await getDoc(chatDocRef);
+
+      if (!chatDoc.exists()) {
+          await setDoc(chatDocRef, {
+              users: [loggedInUser.id, userToAdd.id],
+              lastMessage: null,
+          });
+      }
+
+      toast({
+          title: "User Added",
+          description: `${userToAdd.name} has been added to your chat list.`
+      })
 
     } catch (error) {
       console.error("Error adding user:", error);
@@ -210,16 +241,12 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
         chatUsers: arrayRemove(userId),
       });
       
-      const newUsers = users.filter(user => user.id !== userId);
-      setUsers(newUsers);
+      // Optionally, remove the loggedInUser from the other user's chat list as well
+      const otherUserDocRef = doc(db, "users", userId);
+      await updateDoc(otherUserDocRef, {
+        chatUsers: arrayRemove(loggedInUser.id),
+      });
 
-      if (selectedUser?.id === userId) {
-        if (newUsers.length > 0) {
-          setSelectedUser(newUsers[0]);
-        } else {
-          setSelectedUser(null);
-        }
-      }
       toast({
           title: "User removed",
           description: "The user has been removed from your chat list."
@@ -237,17 +264,15 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
   const handleProfileUpdate = async (newAvatarUrl: string) => {
     if (loggedInUser) {
         try {
-            const userDocRef = doc(db, "users", loggedInUser.id);
-            await updateDoc(userDocRef, { photoURL: newAvatarUrl });
-            // The onAuthStateChanged listener should pick this up, but we can also update the auth profile
             const user = auth.currentUser;
             if (user) {
-                await updateDoc(doc(db, "users", user.uid), { photoURL: newAvatarUrl });
+              const userDocRef = doc(db, "users", user.uid);
+              await updateDoc(userDocRef, { photoURL: newAvatarUrl });
+              toast({
+                  title: "Profile Updated",
+                  description: "Your profile picture has been changed.",
+              });
             }
-            toast({
-                title: "Profile Updated",
-                description: "Your profile picture has been changed.",
-            });
         } catch (error) {
             console.error("Error updating profile:", error);
             toast({

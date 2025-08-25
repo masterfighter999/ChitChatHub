@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from 'react';
-import { LogOut, UserPlus, X } from "lucide-react";
+import { LogOut, UserPlus, X, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { User, LoggedInUser } from "@/data/mock";
 import { UserAvatar } from "./user-avatar";
@@ -15,6 +15,17 @@ import { EditProfileDialog } from './edit-profile-dialog';
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 interface SidebarProps {
   users: User[];
@@ -109,24 +120,41 @@ export function Sidebar({ users, loggedInUser, selectedUser, onSelectUser, onAdd
                   <p>{user.name}</p>
                 </TooltipContent>
               </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-1/2 right-2 -translate-y-1/2 h-7 w-7 text-muted-foreground opacity-0 group-hover/user-item:opacity-100 transition-opacity"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onRemoveUser(user.id)
-                        }}
-                    >
-                        <X className="w-4 h-4" />
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                    <p>Remove User</p>
-                </TooltipContent>
-              </Tooltip>
+               <AlertDialog>
+                  <TooltipProvider delayDuration={0}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <AlertDialogTrigger asChild>
+                           <Button
+                              variant="ghost"
+                              size="icon"
+                              className="absolute top-1/2 right-2 -translate-y-1/2 h-7 w-7 text-muted-foreground opacity-0 group-hover/user-item:opacity-100 transition-opacity"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Trash2 className="w-4 h-4 text-red-500" />
+                            </Button>
+                        </AlertDialogTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">
+                        <p>Remove User</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently remove {user.name} from your chat list and delete your chat history.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => onRemoveUser(user.id)} className="bg-red-500 hover:bg-red-600">
+                        Remove
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
             </div>
           ))}
           </TooltipProvider>
