@@ -54,22 +54,28 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
           
           if (chatUserIds.length > 0) {
             const usersQuery = query(collection(db, 'users'), where(documentId(), 'in', chatUserIds));
-            const usersSnapshot = await getDocs(usersQuery);
-            const chatUsers = usersSnapshot.docs.map(doc => ({
-              id: doc.id,
-              ...doc.data(),
-              online: doc.data().online || false, // Ensure online status is set
-            })) as User[];
             
-            setUsers(chatUsers);
+            // Separate onSnapshot for the list of users
+            const unsubscribeUsers = onSnapshot(usersQuery, (usersSnapshot) => {
+              const chatUsers = usersSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                online: doc.data().online || false,
+              })) as User[];
+              
+              setUsers(chatUsers);
 
-            if (chatUsers.length > 0) {
-               if (!selectedUser || !chatUsers.find(u => u.id === selectedUser.id)) {
-                setSelectedUser(chatUsers[0]);
+              if (chatUsers.length > 0) {
+                 if (!selectedUser || !chatUsers.find(u => u.id === selectedUser.id)) {
+                  setSelectedUser(chatUsers.find(u => u.id !== loggedInUser.id) || chatUsers[0]);
+                }
+              } else {
+                setSelectedUser(null);
               }
-            } else {
-              setSelectedUser(null);
-            }
+            });
+            // Return this new unsubscribe function
+            return unsubscribeUsers;
+
           } else {
               setUsers([]);
               setSelectedUser(null);
@@ -94,7 +100,9 @@ export function ChatLayout({ loggedInUser }: ChatLayoutProps) {
     const setupListener = async () => {
       unsubscribe = await fetchUserChatList();
     }
-    setupListener();
+    if (loggedInUser?.id) {
+        setupListener();
+    }
 
     return () => {
       if (unsubscribe) {
