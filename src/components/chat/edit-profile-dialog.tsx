@@ -17,6 +17,9 @@ import { Label } from '@/components/ui/label';
 import { Settings } from 'lucide-react';
 import { LoggedInUser } from '@/data/mock';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { auth } from '@/lib/firebase';
+import { updateProfile } from 'firebase/auth';
+import { useToast } from '@/hooks/use-toast';
 
 interface EditProfileDialogProps {
   user: LoggedInUser;
@@ -27,11 +30,23 @@ interface EditProfileDialogProps {
 
 export function EditProfileDialog({ user, onProfileUpdate, isOpen, setIsOpen }: EditProfileDialogProps) {
   const [avatarUrl, setAvatarUrl] = useState(user.avatar);
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onProfileUpdate(avatarUrl);
-    setIsOpen(false);
+    if (auth.currentUser) {
+      try {
+        await updateProfile(auth.currentUser, { photoURL: avatarUrl });
+        onProfileUpdate(avatarUrl);
+        setIsOpen(false);
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Update Failed",
+          description: "Could not update your profile picture."
+        })
+      }
+    }
   };
 
   return (

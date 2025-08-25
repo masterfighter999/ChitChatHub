@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from 'react';
-import { LogOut, UserPlus, X, Settings } from "lucide-react";
+import { LogOut, UserPlus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { User, LoggedInUser } from "@/data/mock";
 import { UserAvatar } from "./user-avatar";
@@ -12,6 +12,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ChitChatHubLogo } from "@/components/icons";
 import { useRouter } from 'next/navigation';
 import { EditProfileDialog } from './edit-profile-dialog';
+import { auth } from '@/lib/firebase';
+import { signOut } from 'firebase/auth';
+import { useToast } from '@/hooks/use-toast';
 
 interface SidebarProps {
   users: User[];
@@ -25,14 +28,21 @@ interface SidebarProps {
 
 export function Sidebar({ users, loggedInUser, selectedUser, onSelectUser, onAddUser, onRemoveUser, onProfileUpdate }: SidebarProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [isProfileDialogOpen, setProfileDialogOpen] = useState(false);
 
-  const handleLogout = () => {
-    localStorage.removeItem('userIsLoggedIn');
-    localStorage.removeItem('loggedInUserName');
-    localStorage.removeItem('loggedInUserAvatar');
-    router.push('/login');
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.push('/login');
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: "Logout Failed",
+        description: "An error occurred while logging out."
+      })
+    }
   };
 
   const handleAddUser = (e: React.FormEvent) => {
@@ -85,14 +95,12 @@ export function Sidebar({ users, loggedInUser, selectedUser, onSelectUser, onAdd
                   >
                     <div className="relative">
                       <UserAvatar user={user} className="w-10 h-10" />
-                      {user.online && (
-                        <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-background" />
-                      )}
+                      {/* Online status can be dynamic from Firestore later */}
                     </div>
                     <div className="flex-1 truncate">
                       <p className="font-semibold text-foreground">{user.name}</p>
                       <p className="text-sm text-muted-foreground truncate">
-                        {user.online ? 'Online' : 'Offline'}
+                        {user.email}
                       </p>
                     </div>
                   </button>

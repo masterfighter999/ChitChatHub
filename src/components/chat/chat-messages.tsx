@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useRef, useEffect } from "react";
@@ -6,6 +7,7 @@ import { cn } from "@/lib/utils";
 import type { Message, User } from "@/data/mock";
 import { UserAvatar } from "./user-avatar";
 import { format } from "date-fns";
+import { Timestamp } from "firebase/firestore";
 
 interface ChatMessagesProps {
   messages: Message[];
@@ -20,6 +22,13 @@ export function ChatMessages({ messages, loggedInUser }: ChatMessagesProps) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
   }, [messages]);
+  
+  const toDate = (timestamp: any): Date => {
+    if (timestamp instanceof Timestamp) {
+      return timestamp.toDate();
+    }
+    return new Date(timestamp);
+  }
 
   return (
     <div ref={scrollAreaRef} className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -52,11 +61,11 @@ export function ChatMessages({ messages, loggedInUser }: ChatMessagesProps) {
               >
                 <p className="mb-1">{message.text}</p>
                 <p className={cn("text-xs", isSender ? "text-primary-foreground/70" : "text-muted-foreground")}>
-                  {format(message.timestamp, "HH:mm")}
+                  {format(toDate(message.timestamp), "HH:mm")}
                 </p>
               </div>
               {isSender && (
-                <UserAvatar user={message.sender} className="w-8 h-8" />
+                <UserAvatar user={loggedInUser} className="w-8 h-8" />
               )}
             </motion.div>
           );

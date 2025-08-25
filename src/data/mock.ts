@@ -1,37 +1,25 @@
 
+import { Timestamp } from "firebase/firestore";
+
 export interface User {
   id: string;
   name: string;
   avatar: string;
-  online: boolean;
+  online?: boolean; // Online status can be managed via Firestore presence
   email: string;
 }
 
 export interface LoggedInUser extends User {}
 
 export interface Message {
-  id: number;
+  id: string; // Firestore document ID
   sender: User;
   text: string;
-  timestamp: Date;
+  timestamp: Date | Timestamp;
 }
 
-// This function now dynamically gets the logged-in user's name and avatar.
-export function getLoggedInUser(): LoggedInUser {
-  let name = "Alex Doe"; // Default name
-  let avatar = `https://i.pravatar.cc/150?u=user0`; // Default avatar
-  if (typeof window !== 'undefined') {
-    name = localStorage.getItem('loggedInUserName') || "Alex Doe";
-    avatar = localStorage.getItem('loggedInUserAvatar') || `https://i.pravatar.cc/150?u=user0`;
-  }
-  return {
-    id: "user0",
-    name: name,
-    avatar: avatar,
-    online: true,
-    email: "guest@example.com",
-  };
-};
+// Mock data is no longer the primary source of truth.
+// It can be kept for reference or completely removed.
 
 export const allUsers: User[] = [
     {
@@ -70,43 +58,3 @@ export const allUsers: User[] = [
       email: "diana.miller@example.com",
     },
   ];
-
-export const initialChatUsers: User[] = allUsers.slice(0, 3);
-
-
-const loggedInUser = getLoggedInUser();
-
-export const messages: Record<string, Message[]> = {
-  user1: [
-    {
-      id: 1,
-      sender: allUsers[0],
-      text: "Hey! How's it going?",
-      timestamp: new Date(Date.now() - 1000 * 60 * 5),
-    },
-    {
-      id: 2,
-      sender: loggedInUser,
-      text: "I'm doing great, thanks for asking.",
-      timestamp: new Date(Date.now() - 1000 * 60 * 4),
-    },
-  ],
-  user2: [
-    {
-      id: 4,
-      sender: loggedInUser,
-      text: "Hi Bob, are you free for a call tomorrow?",
-      timestamp: new Date(Date.now() - 1000 * 60 * 20),
-    },
-  ],
-  user3: [
-    {
-      id: 5,
-      sender: allUsers[2],
-      text: "Can you send over the project files?",
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
-    },
-  ],
-  user4: [],
-  user5: [],
-};

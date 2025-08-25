@@ -6,23 +6,38 @@ import { ChatLayout } from "@/components/chat/chat-layout";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
+import { onAuthStateChanged, User as FirebaseAuthUser } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { LoggedInUser } from '@/data/mock';
 
 export default function Home() {
-  const [userIsLoggedIn, setUserIsLoggedIn] = useState(false);
+  const [loggedInUser, setLoggedInUser] = useState<LoggedInUser | null>(null);
   const [isClient, setIsClient] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     setIsClient(true);
-    const loggedIn = localStorage.getItem('userIsLoggedIn') === 'true';
-    setUserIsLoggedIn(loggedIn);
-    if (!loggedIn) {
-      router.push('/login');
-    }
+    const unsubscribe = onAuthStateChanged(auth, (user: FirebaseAuthUser | null) => {
+      if (user) {
+        setLoggedInUser({
+          id: user.uid,
+          name: user.displayName || 'Anonymous',
+          avatar: user.photoURL || `https://i.pravatar.cc/150?u=${user.uid}`,
+          online: true,
+          email: user.email || ''
+        });
+      } else {
+        setLoggedInUser(null);
+        router.push('/login');
+      }
+    });
+
+    return () => unsubscribe();
   }, [router]);
 
-  if (!isClient) {
-    // Render nothing or a loading spinner on the server to avoid hydration mismatch
+  if (!isClient || !loggedInUser) {
+    // Render nothing or a loading spinner on the server/during auth check
     return null;
   }
 
@@ -34,15 +49,7 @@ export default function Home() {
         <div className="absolute -bottom-40 -left-20 w-80 h-80 bg-accent/20 rounded-full filter blur-3xl opacity-50 animate-blob animation-delay-4000"></div>
       </div>
       <div className="z-10 w-full h-full p-2 sm:p-4 md:p-6 lg:p-8">
-        { userIsLoggedIn ? <ChatLayout /> : (
-            <div className="flex flex-col items-center justify-center h-full">
-                <h1 className="text-4xl font-bold mb-4">Welcome to ChitChatHub</h1>
-                <p className="text-lg text-muted-foreground mb-8">Please log in to continue.</p>
-                <Button asChild>
-                    <Link href="/login">Go to Login</Link>
-                </Button>
-            </div>
-        )}
+        <ChatLayout loggedInUser={loggedInUser} />
       </div>
     </main>
   );

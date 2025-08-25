@@ -11,6 +11,10 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { auth, db } from "@/lib/firebase";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
 import { UserPlus } from "lucide-react";
 import Link from 'next/link';
 import { useRouter } from "next/navigation";
@@ -18,15 +22,41 @@ import { useState } from "react";
 
 export default function SignupPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSignup = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSignup = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // In a real app, you'd have user creation logic here.
-    // For now, we'll just redirect to the home page and log the user in.
-    localStorage.setItem('userIsLoggedIn', 'true');
-    localStorage.setItem('loggedInUserName', fullName);
-    router.push('/');
+    setIsLoading(true);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      
+      await updateProfile(user, {
+        displayName: fullName,
+        photoURL: `https://i.pravatar.cc/150?u=${user.uid}`
+      });
+
+      await setDoc(doc(db, "users", user.uid), {
+        uid: user.uid,
+        displayName: fullName,
+        email: user.email,
+        photoURL: user.photoURL
+      });
+
+      router.push('/');
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Sign Up Failed",
+        description: error.message,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -55,6 +85,7 @@ export default function SignupPage() {
                     required 
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
+                    disabled={isLoading}
                   />
                 </div>
                 <div className="grid gap-2">
@@ -64,14 +95,24 @@ export default function SignupPage() {
                     type="email"
                     placeholder="m@example.com"
                     required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={isLoading}
                   />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="password">Password</Label>
-                  <Input id="password" type="password" required />
+                  <Input 
+                    id="password" 
+                    type="password" 
+                    required 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={isLoading}
+                  />
                 </div>
-                <Button type="submit" className="w-full">
-                  <UserPlus className="mr-2 h-4 w-4" /> Create account
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Creating account...' : <><UserPlus className="mr-2 h-4 w-4" /> Create account</>}
                 </Button>
               </div>
             </form>
