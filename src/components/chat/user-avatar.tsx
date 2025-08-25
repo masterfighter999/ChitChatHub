@@ -8,12 +8,16 @@ interface UserAvatarProps {
 }
 
 export function UserAvatar({ user, className }: UserAvatarProps) {
+  if (!user) {
+    return null;
+  }
+  
   return (
     <Avatar className={cn("w-12 h-12", className)}>
       <AvatarImage src={user.avatar} alt={user.name} />
       <AvatarFallback>
         {user.name
-          .split(" ")
+          ?.split(" ")
           .map((n) => n[0])
           .join("")}
       </AvatarFallback>
