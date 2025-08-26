@@ -1,3 +1,5 @@
+'use server';
+
 import {genkit, Plugin} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 // Corrected the import based on the build error suggestion.
