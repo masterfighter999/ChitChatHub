@@ -18,7 +18,6 @@ ChitChatHub is a modern, real-time chat application built with Next.js and Fireb
 
 -   **Framework:** [Next.js](https://nextjs.org/) (App Router)
 -   **Database & Auth:** [Firebase](https://firebase.google.com/) (Firestore, Authentication)
--   **AI/Generative AI:** [Genkit (Gemini API)](https://firebase.google.com/docs/genkit)
 -   **UI Components:** [ShadCN UI](https://ui.shadcn.com/)
 -   **Styling:** [Tailwind CSS](https://tailwindcss.com/)
 -   **Deployment:** [Vercel](https://vercel.com/)
