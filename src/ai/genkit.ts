@@ -1,7 +1,6 @@
-
 import {genkit, Plugin} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
-import {firebase} from '@genkit-ai/firebase';
+import {firebase} from '@genkit-ai/firebase/plugin';
 
 const plugins: Plugin[] = [googleAI()];
 // Use Firebase plugin on Vercel.
@@ -12,5 +11,7 @@ if (process.env.VERCEL) {
 
 export const ai = genkit({
   plugins,
-  model: 'googleai/gemini-2.0-flash',
+  // Note: The model name might be 'gemini-1.5-flash' depending on availability.
+  // 'gemini-2.0-flash' is not a standard model identifier.
+  model: 'googleai/gemini-1.5-flash',
 });
