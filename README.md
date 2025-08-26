@@ -1,3 +1,5 @@
+Web app link - https://chit-chat-hub-5wx7.vercel.app
+
 # ChitChatHub
 
 ChitChatHub is a modern, real-time chat application built with Next.js and Firebase. It features AI-powered message moderation to ensure a safe and friendly environment for users.
